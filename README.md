@@ -57,6 +57,7 @@ The full local onchain lifecycle additionally requires Flare's local FCC/e2e inf
 
 ## Documentation
 
+- [Development setup](docs/development-setup.md)
 - [Architecture](docs/architecture.md)
 - [Threat model](docs/threat-model.md)
 - [Protocol](docs/protocol.md)
