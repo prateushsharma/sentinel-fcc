@@ -1,0 +1,15 @@
+SentinelFCC Upstream Attribution
+================================
+
+SentinelFCC was initialized from the Flare Foundation FCE Extension Scaffold:
+
+  Repository: https://github.com/flare-foundation/fce-extension-scaffold
+  Upstream commit: f48cafb889441a62e47c083f4be8dd7d3f456f83
+
+The scaffold provides the base confidential-compute extension infrastructure.
+SentinelFCC-specific protocol logic, policy evaluation, transaction analysis,
+onchain enforcement, SDKs, integrations, tests, and documentation are developed
+in this repository.
+
+Upstream files and dependencies retain their original copyright notices and
+licensing terms. This notice does not replace or modify those terms.
