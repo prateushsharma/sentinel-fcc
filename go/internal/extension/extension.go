@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"extension-scaffold/internal/config"
+	"extension-scaffold/internal/simulation"
 	"extension-scaffold/pkg/types"
 
 	"github.com/flare-foundation/go-flare-common/pkg/tee/instruction"
@@ -19,9 +20,11 @@ import (
 )
 
 type Extension struct {
-	mu        sync.RWMutex
-	Server    *http.Server
-	decryptor requestDecryptor
+	mu           sync.RWMutex
+	Server       *http.Server
+	decryptor    requestDecryptor
+	simulator    intentSimulator
+	simulatorErr error
 
 	greetingCount int
 	lastGreeting  string
@@ -31,7 +34,12 @@ type Extension struct {
 
 // --- DO NOT MODIFY: New(), actionHandler() are boilerplate.
 func New(extensionPort, signPort int) *Extension {
-	e := &Extension{decryptor: newNodeDecryptor(signPort)}
+	simulator, simulatorErr := simulation.NewFromEnvironment()
+	e := &Extension{
+		decryptor:    newNodeDecryptor(signPort),
+		simulator:    simulator,
+		simulatorErr: simulatorErr,
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /state", e.stateHandler)
