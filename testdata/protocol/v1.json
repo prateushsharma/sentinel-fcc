@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "typeHashes": {
+    "policy": "0x34715d88a63fe1d21b6ea7c7ba9a536db498f3f159bd31fb9848c65894420f97",
+    "transactionIntent": "0x845377ffaa3393a7966abee60e72e96769548533706bd1eb08a119d050bc2950",
+    "evaluationRequest": "0xf39ac6e0a9a200ca84e19c74a2841c667e7f0bace9c8e7e817cb7429632a2eba",
+    "firewallDecision": "0xc57d2d7acdac6b5baeaa6153bb6cc6fca7e78351773e88dfd197288f09f1a375"
+  },
+  "hashes": {
+    "policyCommitment": "0x920969b2945d0f5f6e97d0f49504d7a7ab9b5bba1d9bb4169f1ed0063264d8d6",
+    "calldataHash": "0xba8be884dc1b2bcbae9cbc76531f512dbee5e5231e4799a8791e782eca0c2801",
+    "intentHash": "0x28abb7ea9e331dd76828eeeb29a56bba8d0e5ac2022104ffb321ccb49df9e816",
+    "requestHash": "0x3b1b9bcad2773155238ae26898f7d5191377289136aee2606b0040e182f5b3bc",
+    "decisionHash": "0xdae8957633a9e6c762bd4b04cc3613698c0e3755699c7c8c0412fc84ba3a9fc8"
+  }
+}
