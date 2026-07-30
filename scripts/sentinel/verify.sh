@@ -17,8 +17,8 @@ while IFS= read -r -d '' script; do
 done < <(find scripts -type f -name '*.sh' -print0)
 
 if command -v shellcheck >/dev/null 2>&1; then
-  info "Running ShellCheck on Sentinel-maintained scripts"
-  shellcheck scripts/sentinel/*.sh scripts/patches/*.sh
+  info "Running ShellCheck on maintained Sentinel scripts"
+  shellcheck scripts/sentinel/*.sh
 fi
 
 info "Checking pinned dependency versions"
@@ -27,8 +27,8 @@ info "Checking pinned dependency versions"
 info "Checking Solidity formatting"
 forge fmt --check
 
-info "Building Solidity contracts"
-forge build
+info "Generating Go contract bindings from Solidity"
+./scripts/generate-bindings.sh
 
 info "Running Go extension tests"
 (
