@@ -19,8 +19,9 @@ import (
 )
 
 type Extension struct {
-	mu     sync.RWMutex
-	Server *http.Server
+	mu        sync.RWMutex
+	Server    *http.Server
+	decryptor requestDecryptor
 
 	greetingCount int
 	lastGreeting  string
@@ -30,7 +31,7 @@ type Extension struct {
 
 // --- DO NOT MODIFY: New(), actionHandler() are boilerplate.
 func New(extensionPort, signPort int) *Extension {
-	e := &Extension{}
+	e := &Extension{decryptor: newNodeDecryptor(signPort)}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /state", e.stateHandler)
@@ -70,6 +71,9 @@ func (e *Extension) processAction(action teetypes.Action) (int, []byte) {
 	switch {
 	case dataFixed.OPType == teeutils.ToHash(config.OPTypeGreeting):
 		return e.processGreeting(action, dataFixed)
+
+	case dataFixed.OPType == teeutils.ToHash(config.OPTypeSentinel):
+		return e.processSentinel(action, dataFixed)
 
 	default:
 		return http.StatusNotImplemented, []byte(fmt.Sprintf(
