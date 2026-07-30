@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"extension-scaffold/internal/config"
+	"extension-scaffold/internal/policyengine"
+	"extension-scaffold/internal/simulation"
 	"extension-scaffold/pkg/policy"
 	"extension-scaffold/pkg/protocol"
 	"extension-scaffold/pkg/types"
@@ -25,14 +27,31 @@ func (passthroughDecryptor) Decrypt(_ context.Context, ciphertext []byte) ([]byt
 	return append([]byte(nil), ciphertext...), nil
 }
 
-func TestProcessSentinelEvaluationApprovesAllowedTransfer(t *testing.T) {
-	request := sentinelFixture(t)
+type fixedSimulator struct {
+	result simulation.Result
+	err    error
+}
+
+func (simulator fixedSimulator) Simulate(
+	_ context.Context,
+	_ protocol.TransactionIntent,
+) (simulation.Result, error) {
+	return simulator.result, simulator.err
+}
+
+func TestProcessSentinelEvaluationApprovesQuorumSimulatedTransfer(t *testing.T) {
+	request, snapshot := sentinelFixture(t)
 	payload, err := json.Marshal(request)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	extension := &Extension{decryptor: passthroughDecryptor{}}
+	extension := &Extension{
+		decryptor: passthroughDecryptor{},
+		simulator: fixedSimulator{
+			result: simulation.Result{Snapshot: snapshot},
+		},
+	}
 	action := buildTestAction(
 		teeutils.ToHash(config.OPTypeSentinel),
 		teeutils.ToHash(config.OPCommandEvaluate),
@@ -59,6 +78,9 @@ func TestProcessSentinelEvaluationApprovesAllowedTransfer(t *testing.T) {
 	if !response.Decision.Approved {
 		t.Fatalf("expected approved decision, reasons: %v", response.Reasons)
 	}
+	if response.Decision.SimulationHash != snapshot.EffectsHash {
+		t.Fatal("decision did not bind simulator effects hash")
+	}
 
 	decision, err := response.Decision.ToProtocol()
 	if err != nil {
@@ -73,12 +95,18 @@ func TestProcessSentinelEvaluationApprovesAllowedTransfer(t *testing.T) {
 	}
 }
 
-func TestProcessSentinelRejectsUnknownJSONField(t *testing.T) {
+func TestProcessSentinelFailsClosedWithoutSimulator(t *testing.T) {
+	request, _ := sentinelFixture(t)
+	payload, err := json.Marshal(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	extension := &Extension{decryptor: passthroughDecryptor{}}
 	action := buildTestAction(
 		teeutils.ToHash(config.OPTypeSentinel),
 		teeutils.ToHash(config.OPCommandEvaluate),
-		[]byte(`{"unknown":true}`),
+		payload,
 	)
 
 	status, body := extension.processAction(action)
@@ -91,11 +119,51 @@ func TestProcessSentinelRejectsUnknownJSONField(t *testing.T) {
 		t.Fatal(err)
 	}
 	if actionResult.Status != 0 {
-		t.Fatal("invalid evaluation JSON was accepted")
+		t.Fatal("evaluation succeeded without a simulator")
 	}
 }
 
-func sentinelFixture(t *testing.T) types.SentinelEvaluationRequest {
+func TestProcessSentinelRejectsClientSuppliedSimulation(t *testing.T) {
+	request, _ := sentinelFixture(t)
+	payload, err := json.Marshal(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var object map[string]any
+	if err := json.Unmarshal(payload, &object); err != nil {
+		t.Fatal(err)
+	}
+	object["simulation"] = map[string]any{"providerAgreement": true}
+	payload, err = json.Marshal(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	extension := &Extension{
+		decryptor: passthroughDecryptor{},
+		simulator: fixedSimulator{},
+	}
+	action := buildTestAction(
+		teeutils.ToHash(config.OPTypeSentinel),
+		teeutils.ToHash(config.OPCommandEvaluate),
+		payload,
+	)
+
+	_, body := extension.processAction(action)
+	var actionResult teetypes.ActionResult
+	if err := json.Unmarshal(body, &actionResult); err != nil {
+		t.Fatal(err)
+	}
+	if actionResult.Status != 0 {
+		t.Fatal("client-supplied simulation input was accepted")
+	}
+}
+
+func sentinelFixture(t *testing.T) (
+	types.SentinelEvaluationRequest,
+	policyengine.SimulationSnapshot,
+) {
 	t.Helper()
 
 	privatePolicy := policy.PrivatePolicy{
@@ -169,7 +237,7 @@ func sentinelFixture(t *testing.T) types.SentinelEvaluationRequest {
 		t.Fatal(err)
 	}
 
-	return types.SentinelEvaluationRequest{
+	request := types.SentinelEvaluationRequest{
 		RequestID: common.HexToHash("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"),
 		PolicyEnvelope: protocol.PolicyEnvelope{
 			ProtocolVersion: protocol.CurrentProtocolVersion,
@@ -186,15 +254,17 @@ func sentinelFixture(t *testing.T) types.SentinelEvaluationRequest {
 		},
 		PrivatePolicy: privatePolicy,
 		Intent:        wireIntent,
-		Simulation: types.SentinelSimulationSnapshot{
-			IntentHash:          intentHash,
-			BlockNumber:         900,
-			BlockHash:           common.HexToHash("0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"),
-			ObservedBlockNumber: 901,
-			EffectsHash:         common.HexToHash("0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"),
-			Success:             true,
-			ProviderAgreement:   true,
-			TargetCodeHash:      privatePolicy.Targets[0].CodeHash,
-		},
 	}
+
+	snapshot := policyengine.SimulationSnapshot{
+		IntentHash:          intentHash,
+		BlockNumber:         900,
+		BlockHash:           common.HexToHash("0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"),
+		ObservedBlockNumber: 901,
+		EffectsHash:         common.HexToHash("0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"),
+		Success:             true,
+		ProviderAgreement:   true,
+		TargetCodeHash:      privatePolicy.Targets[0].CodeHash,
+	}
+	return request, snapshot
 }

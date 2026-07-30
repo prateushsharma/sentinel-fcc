@@ -52,25 +52,12 @@ func (intent SentinelTransactionIntent) ToProtocol() (protocol.TransactionIntent
 	}, nil
 }
 
-// SentinelSimulationSnapshot is the JSON-safe normalized simulation input.
-type SentinelSimulationSnapshot struct {
-	IntentHash          common.Hash `json:"intentHash"`
-	BlockNumber         uint64      `json:"blockNumber"`
-	BlockHash           common.Hash `json:"blockHash"`
-	ObservedBlockNumber uint64      `json:"observedBlockNumber"`
-	EffectsHash         common.Hash `json:"effectsHash"`
-	Success             bool        `json:"success"`
-	ProviderAgreement   bool        `json:"providerAgreement"`
-	TargetCodeHash      common.Hash `json:"targetCodeHash"`
-}
-
 // SentinelEvaluationRequest is decrypted and decoded only inside the extension.
 type SentinelEvaluationRequest struct {
-	RequestID      common.Hash                `json:"requestId"`
-	PolicyEnvelope protocol.PolicyEnvelope    `json:"policyEnvelope"`
-	PrivatePolicy  policy.PrivatePolicy       `json:"privatePolicy"`
-	Intent         SentinelTransactionIntent  `json:"intent"`
-	Simulation     SentinelSimulationSnapshot `json:"simulation"`
+	RequestID      common.Hash               `json:"requestId"`
+	PolicyEnvelope protocol.PolicyEnvelope   `json:"policyEnvelope"`
+	PrivatePolicy  policy.PrivatePolicy      `json:"privatePolicy"`
+	Intent         SentinelTransactionIntent `json:"intent"`
 }
 
 // SentinelFirewallDecision is safe for JavaScript and cross-language JSON.

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"extension-scaffold/internal/config"
 	"extension-scaffold/internal/policyengine"
@@ -16,6 +17,8 @@ import (
 	teetypes "github.com/flare-foundation/tee-node/pkg/types"
 	teeutils "github.com/flare-foundation/tee-node/pkg/utils"
 )
+
+const simulationRequestTimeout = 20 * time.Second
 
 func (e *Extension) processSentinel(
 	action teetypes.Action,
@@ -48,11 +51,31 @@ func (e *Extension) processEvaluation(
 			fmt.Errorf("request decryptor is not configured"),
 		)
 	}
+	if e.simulatorErr != nil {
+		return buildResult(
+			action,
+			dataFixed,
+			nil,
+			0,
+			fmt.Errorf("simulation configuration: %w", e.simulatorErr),
+		)
+	}
+	if e.simulator == nil {
+		return buildResult(
+			action,
+			dataFixed,
+			nil,
+			0,
+			fmt.Errorf("simulation service is not configured"),
+		)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), decryptRequestTimeout)
-	defer cancel()
-
-	plaintext, err := e.decryptor.Decrypt(ctx, dataFixed.OriginalMessage)
+	decryptContext, cancelDecrypt := context.WithTimeout(
+		context.Background(),
+		decryptRequestTimeout,
+	)
+	plaintext, err := e.decryptor.Decrypt(decryptContext, dataFixed.OriginalMessage)
+	cancelDecrypt()
 	if err != nil {
 		return buildResult(
 			action,
@@ -75,6 +98,7 @@ func (e *Extension) processEvaluation(
 			fmt.Errorf("decoding evaluation request: %w", err),
 		)
 	}
+
 	var trailing any
 	if err := decoder.Decode(&trailing); err != io.EOF {
 		if err == nil {
@@ -100,22 +124,29 @@ func (e *Extension) processEvaluation(
 		)
 	}
 
+	simulationContext, cancelSimulation := context.WithTimeout(
+		context.Background(),
+		simulationRequestTimeout,
+	)
+	simulationResult, err := e.simulator.Simulate(simulationContext, intent)
+	cancelSimulation()
+	if err != nil {
+		return buildResult(
+			action,
+			dataFixed,
+			nil,
+			0,
+			fmt.Errorf("simulating intent: %w", err),
+		)
+	}
+
 	result, err := policyengine.Evaluate(policyengine.Request{
 		RequestID:      request.RequestID,
 		EvaluationTime: dataFixed.Timestamp,
 		PolicyEnvelope: request.PolicyEnvelope,
 		PrivatePolicy:  request.PrivatePolicy,
 		Intent:         intent,
-		Simulation: policyengine.SimulationSnapshot{
-			IntentHash:          request.Simulation.IntentHash,
-			BlockNumber:         request.Simulation.BlockNumber,
-			BlockHash:           request.Simulation.BlockHash,
-			ObservedBlockNumber: request.Simulation.ObservedBlockNumber,
-			EffectsHash:         request.Simulation.EffectsHash,
-			Success:             request.Simulation.Success,
-			ProviderAgreement:   request.Simulation.ProviderAgreement,
-			TargetCodeHash:      request.Simulation.TargetCodeHash,
-		},
+		Simulation:     simulationResult.Snapshot,
 	})
 	if err != nil {
 		return buildResult(

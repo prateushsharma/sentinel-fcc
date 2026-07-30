@@ -64,6 +64,7 @@ The full local onchain lifecycle additionally requires Flare's local FCC/e2e inf
 - [Protocol v1 canonical encoding](docs/protocol-v1.md)
 - [Onchain policy and execution boundary](docs/onchain-enforcement.md)
 - [Confidential policy engine](docs/confidential-policy-engine.md)
+- [Quorum transaction simulation](docs/quorum-simulation.md)
 - [Policy schema](docs/policy-schema.md)
 - [Decision format](docs/decision-format.md)
 - [Trust assumptions](docs/trust-assumptions.md)
