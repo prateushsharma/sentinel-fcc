@@ -24,11 +24,17 @@ fi
 info "Checking pinned dependency versions"
 ./scripts/check-versions.sh
 
+info "Checking canonical protocol vectors"
+./scripts/sentinel/check-protocol-vectors.sh
+
 info "Checking Solidity formatting"
 forge fmt --check
 
 info "Generating Go contract bindings from Solidity"
 ./scripts/generate-bindings.sh
+
+info "Running Solidity protocol tests"
+forge test
 
 info "Running Go extension tests"
 (
