@@ -105,6 +105,18 @@ library SentinelProtocol {
         uint256 riskFlags;
     }
 
+    function currentProtocolVersion() internal pure returns (uint16) {
+        return CURRENT_PROTOCOL_VERSION;
+    }
+
+    function currentPolicySchemaVersion() internal pure returns (uint16) {
+        return CURRENT_POLICY_SCHEMA_VERSION;
+    }
+
+    function currentDecisionVersion() internal pure returns (uint16) {
+        return CURRENT_DECISION_VERSION;
+    }
+
     function policyTypeHash() internal pure returns (bytes32) {
         return POLICY_TYPEHASH;
     }
