@@ -23,6 +23,13 @@ contract HelloWorldInstructionSender {
     // forge-lint: disable-next-line(unsafe-typecast)
     bytes32 public constant OP_COMMAND_SAY_GOODBYE = bytes32("SAY_GOODBYE");
 
+    /// @notice Operation type for confidential Sentinel evaluations.
+    // forge-lint: disable-next-line(unsafe-typecast)
+    bytes32 public constant OP_TYPE_SENTINEL = bytes32("SENTINEL");
+    /// @notice Command for deterministic private-policy evaluation.
+    // forge-lint: disable-next-line(unsafe-typecast)
+    bytes32 public constant OP_COMMAND_EVALUATE = bytes32("EVALUATE");
+
     /// @notice Reference to the TEE extension registry contract.
     ITeeExtensionRegistry public immutable TEE_EXTENSION_REGISTRY;
     /// @notice Reference to the TEE machine registry contract.
@@ -96,6 +103,32 @@ contract HelloWorldInstructionSender {
             opType: OP_TYPE_GREETING,
             opCommand: OP_COMMAND_SAY_GOODBYE,
             message: abi.encode(SayGoodbyeMessage({name: _name, reason: _reason})),
+            cosigners: cosigners,
+            cosignersThreshold: 0,
+            claimBackAddress: msg.sender
+        });
+
+        TEE_EXTENSION_REGISTRY.sendInstructions{value: msg.value}(teeIds, params);
+    }
+
+    /// @notice Sends a request encrypted to one explicitly selected TEE.
+    /// @dev The caller must obtain the selected TEE's public key and encrypt the
+    ///      complete evaluation request before submitting this transaction.
+    /// @param _teeId TEE machine whose public key encrypted the request.
+    /// @param _encryptedRequest Ciphertext only; private policy plaintext must
+    ///        never be included in transaction calldata.
+    function sendEvaluation(address _teeId, bytes calldata _encryptedRequest) external payable {
+        require(_teeId != address(0), "TEE id cannot be zero");
+        require(_encryptedRequest.length != 0, "Encrypted request cannot be empty");
+
+        address[] memory teeIds = new address[](1);
+        teeIds[0] = _teeId;
+        address[] memory cosigners = new address[](0);
+
+        ITeeExtensionRegistry.TeeInstructionParams memory params = ITeeExtensionRegistry.TeeInstructionParams({
+            opType: OP_TYPE_SENTINEL,
+            opCommand: OP_COMMAND_EVALUATE,
+            message: _encryptedRequest,
             cosigners: cosigners,
             cosignersThreshold: 0,
             claimBackAddress: msg.sender
