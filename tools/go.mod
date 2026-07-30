@@ -3,7 +3,7 @@ module extension-scaffold/tools
 go 1.25.1
 
 require (
-	github.com/ethereum/go-ethereum v1.17.4
+	github.com/ethereum/go-ethereum v1.17.5
 	github.com/flare-foundation/go-flare-common v1.2.2-0.20260623111601-c573c79c0924
 	github.com/flare-foundation/tee-node v0.0.21-0.20260619120252-31fc839ae6d2
 	github.com/flare-foundation/tee-proxy v0.0.18
@@ -41,7 +41,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.37.0 // indirect
-	github.com/ethereum/c-kzg-4844/v2 v2.1.6 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.8 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fjl/jsonw v0.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
