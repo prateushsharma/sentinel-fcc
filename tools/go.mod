@@ -4,8 +4,8 @@ go 1.25.1
 
 require (
 	github.com/ethereum/go-ethereum v1.17.4
-	github.com/flare-foundation/go-flare-common v1.2.2-0.20260623111601-c573c79c0924
-	github.com/flare-foundation/tee-node v0.0.21-0.20260619120252-31fc839ae6d2
+	github.com/flare-foundation/go-flare-common v1.2.2-0.20260820114858-51165807a89f
+	github.com/flare-foundation/tee-node v0.0.27
 	github.com/flare-foundation/tee-proxy v0.0.18
 	github.com/joho/godotenv v1.5.1
 	github.com/pkg/errors v0.9.1
@@ -33,6 +33,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	cloud.google.com/go/firestore v1.21.0 // indirect
 	cloud.google.com/go/longrunning v0.7.0 // indirect
+	filippo.io/bigmod v0.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251106012722-c7be33e82a11 // indirect
 	github.com/bits-and-blooms/bitset v1.24.3 // indirect
